@@ -37,24 +37,38 @@ public class Main {
     }
 
     private static String color(int row, int column) {
-        final Color color = spheres.stream()
-                .filter(sphere -> new Vector3D(row, column, 0).distance(sphere.center) < sphere.radius)
+        return colorAsString(spheres.stream()
+                .filter(sphere -> Sphere.intersects(row, column, sphere))
                 .map(sphere -> sphere.color)
-                .reduce((a, b) -> new Color(a.getRed() + b.getRed(), a.getGreen() + b.getGreen(), a.getBlue() + b.getBlue()))
-                .orElse(Color.BLACK);
+                .reduce(Main::sumColors)
+                .orElse(Color.BLACK));
+    }
+
+    private static String colorAsString(Color color) {
         return String.format("%d %d %d", color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    private static Color sumColors(final Color first, final Color second) {
+        return new Color(
+                first.getRed() + second.getRed(),
+                first.getGreen() + second.getGreen(),
+                first.getBlue() + second.getBlue());
     }
 
 }
 
 final class Sphere {
-    final Vector3D center;
-    final double radius;
+    private final Vector3D center;
+    private final double radius;
     final Color color;
 
     Sphere(Vector3D center, double radius, Color color) {
         this.center = center;
         this.radius = radius;
         this.color = color;
+    }
+
+    static boolean intersects(int row, int column, Sphere sphere) {
+        return new Vector3D(row, column, 0).distance(sphere.center) < sphere.radius;
     }
 }
