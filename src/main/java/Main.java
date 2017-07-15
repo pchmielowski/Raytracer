@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 
 public class Main {
     private final static List<Sphere> spheres = Arrays.asList(
-            new Sphere(new Vector3D(0.0, 0, -20), 1, Color.BLUE),
+            new Sphere(new Vector3D(0.0, 0, -50), 4, Color.BLUE),
             new Sphere(new Vector3D(5.0, 0, -25), 3, Color.RED),
             new Sphere(new Vector3D(-5.5, 0, -15), 2, Color.MAGENTA)
     );
@@ -32,6 +32,7 @@ public class Main {
                         .range(0, COLUMNS)
                         .boxed()
                         .map(column -> color(row, column))
+                        .map(Main::colorAsString)
                         .collect(Collectors.joining(" ")))
                 .collect(Collectors.joining("\n", "", "\n"));
         writer.write(content);
@@ -39,12 +40,13 @@ public class Main {
         writer.close();
     }
 
-    private static String color(int row, int column) {
-        return colorAsString(spheres.stream()
-                .filter(sphere -> sphere.intersects(row, column))
-                .map(sphere -> sphere.color)
-                .reduce(Main::sumColors)
-                .orElse(Color.BLACK));
+    private static Color color(int row, int column) {
+        return spheres.stream()
+                .map(sphere -> sphere.intersects(row, column))
+                .filter(intersection -> intersection.intersects)
+                .reduce((a, b) -> a.t0Ort1() < b.t0Ort1() ? a : b)
+                .map(intersection -> intersection.sphere.color)
+                .orElse(Color.BLACK);
     }
 
     private static String colorAsString(Color color) {
@@ -64,6 +66,28 @@ public class Main {
 }
 
 final class Sphere {
+    static class Intersection {
+        final boolean intersects;
+        final double t0;
+        final double t1;
+        final Sphere sphere;
+
+        Intersection(boolean intersects, double t0, double t1, Sphere sphere) {
+            this.intersects = intersects;
+            this.t0 = t0;
+            this.t1 = t1;
+            this.sphere = sphere;
+        }
+
+        static Intersection not(Sphere sphere) {
+            return new Intersection(false, 0, 0, sphere);
+        }
+
+        double t0Ort1() {
+            return this.t0 < 0 ? this.t1 : this.t0;
+        }
+    }
+
     private final Vector3D center;
     private final double radius;
     final Color color;
@@ -75,17 +99,17 @@ final class Sphere {
         this.color = color;
     }
 
-    boolean intersects(int row, int column) {
+    Intersection intersects(int row, int column) {
         final Vector3D rayOrigin = new Vector3D(0, 0, 10);
         final Vector3D l = center.subtract(rayOrigin);
         final double tca = l.dotProduct(rayDir(row, column));
-        if (tca < 0) return false;
+        if (tca < 0) return Intersection.not(this);
         final double d2 = l.dotProduct(l) - tca * tca;
-        if (d2 > radius * radius) return false;
+        if (d2 > radius * radius) return Intersection.not(this);
         final double thc = Math.sqrt(radius * radius - d2);
         final double t0 = tca - thc;
         final double t1 = tca + thc;
-        return true;
+        return new Intersection(true, t0, t1, this);
     }
 
     private Vector3D rayDir(int row, int column) {
