@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
-    private static final Color COOL_COLOR = new Color(170, 120, 150);
+    private static final Color COOL_COLOR = new Color(70, 80, 170);
+
     private final static List<Sphere> spheres = Arrays.asList(
             new Sphere(new Vector3D(5.0, 0, -20), 3, COOL_COLOR, intensity -> Math.pow(intensity, 2)),
             new Sphere(new Vector3D(0.0, 0, -25), 3, COOL_COLOR, intensity -> 2 * Math.pow(intensity, 8)),
@@ -22,24 +23,26 @@ public class Main {
             new Light(new Vector3D(-15., -5., 0.)),
             new Light(new Vector3D(0., 0., -130.))
     );
-    static final int COLUMNS = 800;
-    static final int ROWS = 600;
-    static final Vector3D RAY_ORIGIN = new Vector3D(0, 0, 0);
+
+    static final int WIDTH = 800;
+    static final int HEIGHT = 600;
+
+    static final Vector3D CAMERA_SOURCE = new Vector3D(0, 0, 0);
 
     public static void main(final String[] args) throws IOException {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("out.ppm")));
         writer.write("P3");
         writer.newLine();
-        writer.write(COLUMNS + " " + ROWS);
+        writer.write(WIDTH + " " + HEIGHT);
         writer.newLine();
         writer.write("256");
         writer.newLine();
-        final String content = IntStream.range(0, ROWS)
+        final String content = IntStream.range(0, HEIGHT)
                 .boxed()
-                .map(row -> IntStream
-                        .range(0, COLUMNS)
+                .map(y -> IntStream
+                        .range(0, WIDTH)
                         .boxed()
-                        .map(column -> color(row, column))
+                        .map(x -> color(y, x))
                         .map(Main::colorAsString)
                         .collect(Collectors.joining(" ")))
                 .collect(Collectors.joining("\n", "", "\n"));
@@ -48,9 +51,9 @@ public class Main {
         writer.close();
     }
 
-    private static Color color(int row, int column) {
+    private static Color color(int x, int y) {
         return spheres.stream()
-                .map(sphere -> sphere.intersection(row, column))
+                .map(sphere -> sphere.intersection(x, y))
                 .filter(intersection -> intersection.intersects)
                 .reduce(Main::chooseClosest)
                 .map(intersection -> intersection.getColor(lights))
@@ -58,7 +61,7 @@ public class Main {
     }
 
     private static Sphere.Intersection chooseClosest(Sphere.Intersection a, Sphere.Intersection b) {
-        return a.tNear() < b.tNear() ? a : b;
+        return a.distanceToCamera() < b.distanceToCamera() ? a : b;
     }
 
     private static String colorAsString(Color color) {
@@ -83,48 +86,44 @@ final class Sphere {
 
     static class Intersection {
         final boolean intersects;
-        private final double t0;
-        private final double t1;
         final Sphere sphere;
-        final Vector3D rayDir;
+        final Vector3D cameraDirection;
+        private final double distanceToCamera;
 
-        Intersection(boolean intersects, double t0, double t1, Sphere sphere, Vector3D rayDir) {
+        Intersection(boolean intersects, Sphere sphere, Vector3D cameraDirection, double distanceToCamera) {
             this.intersects = intersects;
-            this.t0 = t0;
-            this.t1 = t1;
             this.sphere = sphere;
-            this.rayDir = rayDir;
+            this.cameraDirection = cameraDirection;
+            this.distanceToCamera = distanceToCamera;
         }
 
         static Intersection not(Sphere sphere) {
-            return new Intersection(false, 0, 0, sphere, null);
+            return new Intersection(false, sphere, null, 0);
         }
 
         int withIntensity(double colorIntensity, int value) {
-            return Math.max(Math.min((int) (value * sphere.shader.apply(colorIntensity)), 255), 0) ;
+            return Math.max(Math.min((int) (value * sphere.shader.apply(colorIntensity)), 255), 0);
         }
 
         Color getColor(List<Light> lights) {
-            Vector3D pointOfHit = Main.RAY_ORIGIN.add(rayDir).scalarMultiply(tNear());
-            final Vector3D normalToPointOfHit = pointOfHit.subtract(sphere.center).normalize();
-//            if (rayDir.dotProduct(normalToPointOfHit) > 0)
-//                normalToPointOfHit = normalToPointOfHit.negate();
+            final Vector3D pointOfHit = Main.CAMERA_SOURCE.add(cameraDirection).scalarMultiply(distanceToCamera());
+            final Vector3D normalToPointOfHit = getNormal(pointOfHit);
 
             return lights.stream()
-                    .map(light -> {
-                        Vector3D lightDirection = light.center.subtract(pointOfHit).normalize();
-                        final double colorIntensity = Math.max(0., normalToPointOfHit.dotProduct(lightDirection));
-                        final Color color = sphere.color;
-                        return new Color(withIntensity(colorIntensity, color.getRed()),
-                                withIntensity(colorIntensity, color.getGreen()),
-                                withIntensity(colorIntensity, color.getBlue()));
-                    })
+                    .map(light -> light.getColor(pointOfHit, normalToPointOfHit, sphere.color, this))
                     .reduce(Main::sumColors)
                     .orElse(Color.BLACK);
         }
 
-        double tNear() {
-            return this.t0 < 0 ? this.t1 : this.t0;
+        private Vector3D getNormal(Vector3D pointOfHit) {
+            // TODO: flip normal if we are inside
+            //            if (cameraDirection.dotProduct(normalToPointOfHit) > 0)
+            //                normalToPointOfHit = normalToPointOfHit.negate();
+            return pointOfHit.subtract(sphere.center).normalize();
+        }
+
+        double distanceToCamera() {
+            return distanceToCamera;
         }
     }
 
@@ -140,35 +139,53 @@ final class Sphere {
         this.shader = shader;
     }
 
-    Intersection intersection(int row, int column) {
-        final Vector3D l = center.subtract(Main.RAY_ORIGIN);
-        final Vector3D rayDir = rayDir(row, column);
-        final double tca = l.dotProduct(rayDir);
-        if (tca < 0) return Intersection.not(this);
-        final double d2 = l.dotProduct(l) - tca * tca;
-        if (d2 > radius * radius) return Intersection.not(this);
+    Intersection intersection(int x, int y) {
+        final Vector3D fromCamToCenter = center.subtract(Main.CAMERA_SOURCE);
+        final Vector3D cameraDir = cameraDirection(x, y);
+        final double tca = fromCamToCenter.dotProduct(cameraDir);
+        if (tca < 0) {
+            return Intersection.not(this);
+        }
+        final double d2 = fromCamToCenter.getNormSq() - tca * tca;
+        if (d2 > radius * radius) {
+            return Intersection.not(this);
+        }
         final double thc = Math.sqrt(radius * radius - d2);
-        final double t0 = tca - thc;
-        final double t1 = tca + thc;
-        return new Intersection(true, t0, t1, this, rayDir);
+        final double distanceToCamera = tca < thc ? tca + thc : tca - thc;
+        return new Intersection(true, this, cameraDir, distanceToCamera);
     }
 
-    private Vector3D rayDir(int row, int column) {
+    private static Vector3D cameraDirection(int yy, int xx) {
         final double angle = Math.tan(Math.PI * 0.5 * FIELD_OF_VIEW / 180.);
-        final double x = (2. * ((column + 0.5) * invert(Main.COLUMNS)) - 1.) * angle * (float) (Main.COLUMNS / Main.ROWS);
-        final double y = (1. - 2. * ((row + 0.5) * invert(Main.ROWS))) * angle;
+        final double x = (2. * ((xx + 0.5) * invert(Main.WIDTH)) - 1.) * angle * (float) (Main.WIDTH / Main.HEIGHT);
+        final double y = (1. - 2. * ((yy + 0.5) * invert(Main.HEIGHT))) * angle;
         return new Vector3D(x, y, -1).normalize();
     }
 
-    private double invert(int number) {
+    private static double invert(int number) {
         return 1. / (double) number;
     }
 }
 
 final class Light {
-    final Vector3D center;
+    private final Vector3D center;
 
     Light(Vector3D center) {
         this.center = center;
+    }
+
+    private Vector3D getDirection(Vector3D pointOfHit) {
+        return center.subtract(pointOfHit).normalize();
+    }
+
+    private double getIntensity(Vector3D pointOfHit, Vector3D normalToPointOfHit) {
+        return Math.max(0., normalToPointOfHit.dotProduct(getDirection(pointOfHit)));
+    }
+
+    Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Color color, Sphere.Intersection intersection) {
+        double colorIntensity = getIntensity(pointOfHit, normalToPointOfHit);
+        return new Color(intersection.withIntensity(colorIntensity, color.getRed()),
+                intersection.withIntensity(colorIntensity, color.getGreen()),
+                intersection.withIntensity(colorIntensity, color.getBlue()));
     }
 }
