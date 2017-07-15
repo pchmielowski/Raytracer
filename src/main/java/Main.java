@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
-    private static final Vector3D LIGHT_POS = new Vector3D(5., 5., -30.);
+    private static final Vector3D LIGHT_POS = new Vector3D(5., 5., 30.);
     private final static List<Sphere> spheres = Arrays.asList(
             new Sphere(new Vector3D(0.0, 0, -50), 4, Color.BLUE),
             new Sphere(new Vector3D(5.0, 0, -25), 3, Color.RED),
@@ -56,7 +56,7 @@ public class Main {
 
                     Vector3D lightDirection = light.center.subtract(phit).normalize();
 
-                    final double colorIntensity = Math.max(0., -nhit.dotProduct(lightDirection));
+                    final double colorIntensity = Math.max(0., nhit.dotProduct(lightDirection));
 
                     final Color color = intersection.sphere.color;
 
