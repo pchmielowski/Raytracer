@@ -8,15 +8,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
+    private static final Vector3D LIGHT_POS = new Vector3D(5., 5., -30.);
     private final static List<Sphere> spheres = Arrays.asList(
             new Sphere(new Vector3D(0.0, 0, -50), 4, Color.BLUE),
             new Sphere(new Vector3D(5.0, 0, -25), 3, Color.RED),
-            new Sphere(new Vector3D(-5.5, 0, -15), 2, Color.MAGENTA)
+            new Sphere(new Vector3D(-5.5, 0, -15), 2, Color.MAGENTA),
+            new Sphere(LIGHT_POS, 1, Color.WHITE)
     );
-    private final static Light light = new Light(new Vector3D(200, 800, 0));
+    private final static Light light = new Light(LIGHT_POS);
 
     static final int COLUMNS = 800;
     static final int ROWS = 600;
+    static final Vector3D RAY_ORIGIN = new Vector3D(0, 0, 0);
 
     public static void main(final String[] args) throws IOException {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("out.ppm")));
@@ -42,11 +45,31 @@ public class Main {
 
     private static Color color(int row, int column) {
         return spheres.stream()
-                .map(sphere -> sphere.intersects(row, column))
+                .map(sphere -> sphere.intersection(row, column))
                 .filter(intersection -> intersection.intersects)
-                .reduce((a, b) -> a.t0Ort1() < b.t0Ort1() ? a : b)
-                .map(intersection -> intersection.sphere.color)
+                .reduce((a, b) -> a.tNear() < b.tNear() ? a : b)
+                .map(intersection -> {
+
+                    Vector3D phit = RAY_ORIGIN.add(intersection.rayDir).scalarMultiply(intersection.tNear());
+                    Vector3D nhit = phit.subtract(intersection.sphere.center).normalize();
+                    if (intersection.rayDir.dotProduct(nhit) > 0) nhit = nhit.negate();
+
+                    Vector3D lightDirection = light.center.subtract(phit).normalize();
+
+                    final double colorIntensity = Math.max(0., -nhit.dotProduct(lightDirection));
+
+                    final Color color = intersection.sphere.color;
+
+                    return new Color(withIntensity(colorIntensity, color.getRed()),
+                            withIntensity(colorIntensity, color.getGreen()),
+                            withIntensity(colorIntensity, color.getBlue()));
+                })
                 .orElse(Color.BLACK);
+    }
+
+    private static int withIntensity(double colorIntensity, int value) {
+        //        System.out.print(i + ", ");
+        return (int) (value * colorIntensity);
     }
 
     private static String colorAsString(Color color) {
@@ -66,32 +89,35 @@ public class Main {
 }
 
 final class Sphere {
+
     static class Intersection {
         final boolean intersects;
-        final double t0;
-        final double t1;
+        private final double t0;
+        private final double t1;
         final Sphere sphere;
+        final Vector3D rayDir;
 
-        Intersection(boolean intersects, double t0, double t1, Sphere sphere) {
+        Intersection(boolean intersects, double t0, double t1, Sphere sphere, Vector3D rayDir) {
             this.intersects = intersects;
             this.t0 = t0;
             this.t1 = t1;
             this.sphere = sphere;
+            this.rayDir = rayDir;
         }
 
         static Intersection not(Sphere sphere) {
-            return new Intersection(false, 0, 0, sphere);
+            return new Intersection(false, 0, 0, sphere, null);
         }
 
-        double t0Ort1() {
+        double tNear() {
             return this.t0 < 0 ? this.t1 : this.t0;
         }
     }
 
-    private final Vector3D center;
+    final Vector3D center;
     private final double radius;
     final Color color;
-    private static final float FIELD_OF_VIEW = 45;
+    private static final float FIELD_OF_VIEW = 60;
 
     Sphere(Vector3D center, double radius, Color color) {
         this.center = center;
@@ -99,17 +125,17 @@ final class Sphere {
         this.color = color;
     }
 
-    Intersection intersects(int row, int column) {
-        final Vector3D rayOrigin = new Vector3D(0, 0, 10);
-        final Vector3D l = center.subtract(rayOrigin);
-        final double tca = l.dotProduct(rayDir(row, column));
+    Intersection intersection(int row, int column) {
+        final Vector3D l = center.subtract(Main.RAY_ORIGIN);
+        final Vector3D rayDir = rayDir(row, column);
+        final double tca = l.dotProduct(rayDir);
         if (tca < 0) return Intersection.not(this);
         final double d2 = l.dotProduct(l) - tca * tca;
         if (d2 > radius * radius) return Intersection.not(this);
         final double thc = Math.sqrt(radius * radius - d2);
         final double t0 = tca - thc;
         final double t1 = tca + thc;
-        return new Intersection(true, t0, t1, this);
+        return new Intersection(true, t0, t1, this, rayDir);
     }
 
     private Vector3D rayDir(int row, int column) {
@@ -125,7 +151,7 @@ final class Sphere {
 }
 
 final class Light {
-    private final Vector3D center;
+    final Vector3D center;
 
     Light(Vector3D center) {
         this.center = center;
