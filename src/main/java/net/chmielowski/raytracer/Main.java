@@ -12,7 +12,6 @@ public class Main {
     static final int WIDTH = 1024;
     static final int HEIGHT = 768;
 
-    static final Vector3D CAMERA_SOURCE = new Vector3D(0., 0., 0.);
     private static final Function<Double, Double> RUBBER = Math::sin;
     private static final Function<Double, Double> BASIC = Function.identity();
     private static final Function<Double, Double> METAL = intensity -> 2 * Math.pow(intensity, 8);

@@ -19,10 +19,6 @@ class Rendering {
         this.lights = lights;
     }
 
-    private static Intersection chooseClosest(Intersection a, Intersection b) {
-        return a.distanceToCamera() < b.distanceToCamera() ? a : b;
-    }
-
     private static String colorAsString(Color color) {
         return String.format("%d %d %d", color.getRed(), color.getGreen(), color.getBlue());
     }
@@ -40,7 +36,7 @@ class Rendering {
                 .map(y -> IntStream
                         .range(0, Main.WIDTH)
                         .boxed()
-                        .map(x -> color(x, y))
+                        .map(x -> colorAt(x, y))
                         .map(Rendering::colorAsString)
                         .collect(Collectors.joining(" ")))
                 .collect(Collectors.joining("\n", "", "\n"));
@@ -49,12 +45,13 @@ class Rendering {
         writer.close();
     }
 
-    private Color color(int x, int y) {
+    private Color colorAt(int x, int y) {
         return objects.stream()
-                .map(shape -> shape.intersection(x, y))
-                .filter(intersection -> intersection.intersects)
-                .reduce(Rendering::chooseClosest)
+                .map(shape -> shape.intersection(Camera.SOURCE, Camera.direction(x, y)))
+                .filter(Intersection::intersects)
+                .reduce(Intersection::isCloser)
                 .map(intersection -> intersection.getColor(lights, objects))
                 .orElse(Color.BLACK);
     }
+
 }

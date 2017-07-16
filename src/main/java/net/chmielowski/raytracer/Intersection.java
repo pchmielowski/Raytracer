@@ -33,6 +33,14 @@ class Intersection {
         return Math.min(first + second, 255);
     }
 
+    boolean intersects() {
+        return this.intersects;
+    }
+
+    Intersection isCloser(Intersection other) {
+        return distanceToCamera < other.distanceToCamera ? this : other;
+    }
+
     Color getColor(Collection<Light> lights, Collection<Shape> objects) {
         final Vector3D normalToPointOfHit = shape.getNormal(pointOfHit);
         return lights.stream()
@@ -49,7 +57,4 @@ class Intersection {
                 light.getDirection(pointOfHit)).intersects;
     }
 
-    double distanceToCamera() {
-        return distanceToCamera;
-    }
 }

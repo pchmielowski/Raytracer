@@ -4,6 +4,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 
 class Camera {
+    static final Vector3D SOURCE = new Vector3D(0., 0., 0.);
     private static final float FIELD_OF_VIEW = 30;
 
     static Vector3D direction(int x, int y) {

@@ -18,11 +18,6 @@ abstract class Shape {
         return material.getColor(pointOfHit, normalToPointOfHit, light);
     }
 
-    Intersection intersection(int x, int y) {
-        return intersection(Main.CAMERA_SOURCE, Camera.direction(x, y));
-    }
-
-
     public abstract Intersection intersection(Vector3D origin, Vector3D direction);
 
     public abstract Vector3D getCenter();
