@@ -27,7 +27,7 @@ final class Sphere extends Shape {
         }
         final double thc = Math.sqrt(radius * radius - d2);
         final double distanceToCamera = tca < thc ? tca + thc : tca - thc;
-        return new Intersection(true, this, direction, distanceToCamera, /*pointOfHit*/ null);
+        return new Intersection(true, this, distanceToCamera, Main.CAMERA_SOURCE.add(direction).scalarMultiply(distanceToCamera));
     }
 
     @Override

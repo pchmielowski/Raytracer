@@ -20,7 +20,7 @@ class Disc extends Shape {
         // Equation from https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
         double d = center.subtract(origin).dotProduct(normal) / direction.dotProduct(normal);
         final Vector3D pointOfHit = origin.add(direction).scalarMultiply(d);
-        return new Intersection(pointOfHit.subtract(center).getNorm() <= radius, this,/*camera direction*/null,/*distance to camera*/0,
+        return new Intersection(pointOfHit.subtract(center).getNorm() <= radius, this,/*camera direction*//*distance to camera*/0,
                 pointOfHit);
 
     }

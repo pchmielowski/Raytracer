@@ -29,7 +29,7 @@ abstract class Shape {
 
     public abstract Vector3D getNormal(Vector3D pointOfHit);
 
-    public static class Material {
+    static class Material {
         private final Color color;
         private final Function<Double, Double> shader;
 

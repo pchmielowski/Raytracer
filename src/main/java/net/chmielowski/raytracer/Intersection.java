@@ -4,27 +4,23 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.awt.*;
 import java.util.Collection;
-import java.util.Optional;
 
 
 class Intersection {
     final boolean intersects;
     private final Shape shape;
-    private final Vector3D cameraDirection;
     private final double distanceToCamera;
-    private final Vector3D mPointOfHit;
-    Color color = null;
+    private final Vector3D pointOfHit;
 
-    Intersection(boolean intersects, Shape shape, Vector3D cameraDirection, double distanceToCamera, Vector3D pointOfHit) {
+    Intersection(boolean intersects, Shape shape, double distanceToCamera, Vector3D pointOfHit) {
         this.intersects = intersects;
         this.shape = shape;
-        this.cameraDirection = cameraDirection;
         this.distanceToCamera = distanceToCamera;
-        this.mPointOfHit = pointOfHit;
+        this.pointOfHit = pointOfHit;
     }
 
     static Intersection not(Sphere sphere) {
-        return new Intersection(false, sphere, null, 0, null);
+        return new Intersection(false, sphere, 0, null);
     }
 
     private static Color sumColors(final Color first, final Color second) {
@@ -38,8 +34,6 @@ class Intersection {
     }
 
     Color getColor(Collection<Light> lights, Collection<Shape> objects) {
-        final Vector3D pointOfHit = Optional.ofNullable(this.mPointOfHit)
-                .orElseGet(() -> Main.CAMERA_SOURCE.add(cameraDirection).scalarMultiply(distanceToCamera()));
         final Vector3D normalToPointOfHit = shape.getNormal(pointOfHit);
         return lights.stream()
                 .filter(light -> objects.stream()
