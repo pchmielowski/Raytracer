@@ -1,3 +1,5 @@
+package net.chmielowski.raytracer;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.awt.*;

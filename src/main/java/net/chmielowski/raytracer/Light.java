@@ -1,10 +1,10 @@
+package net.chmielowski.raytracer;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.awt.*;
 
-/**
- * Created by piotrek on 16.07.17.
- */
+
 final class Light {
     private final Vector3D center;
 

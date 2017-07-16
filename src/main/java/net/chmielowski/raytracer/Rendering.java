@@ -1,3 +1,5 @@
+package net.chmielowski.raytracer;
+
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
