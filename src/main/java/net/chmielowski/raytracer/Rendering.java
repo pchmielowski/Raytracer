@@ -12,14 +12,14 @@ import java.util.stream.IntStream;
 class Rendering {
 
     private final List<Light> lights;
-    private final List<Sphere> objects;
+    private final List<Shape> objects;
 
-    Rendering(List<Sphere> objects, List<Light> lights) {
+    Rendering(List<Shape> objects, List<Light> lights) {
         this.objects = objects;
         this.lights = lights;
     }
 
-    private static Sphere.Intersection chooseClosest(Sphere.Intersection a, Sphere.Intersection b) {
+    private static Intersection chooseClosest(Intersection a, Intersection b) {
         return a.distanceToCamera() < b.distanceToCamera() ? a : b;
     }
 
@@ -51,7 +51,7 @@ class Rendering {
 
     private Color color(int x, int y) {
         return objects.stream()
-                .map(sphere -> sphere.intersection(x, y))
+                .map(shape -> shape.intersection(x, y))
                 .filter(intersection -> intersection.intersects)
                 .reduce(Rendering::chooseClosest)
                 .map(intersection -> intersection.getColor(lights, objects))

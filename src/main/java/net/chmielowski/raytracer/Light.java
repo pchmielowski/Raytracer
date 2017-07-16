@@ -20,7 +20,7 @@ final class Light {
         return Math.max(0., normalToPointOfHit.dotProduct(getDirection(pointOfHit)));
     }
 
-    Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Color color, Sphere.Intersection intersection) {
+    Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Color color, Intersection intersection) {
         double colorIntensity = getIntensity(pointOfHit, normalToPointOfHit);
         return new Color(intersection.withIntensity(colorIntensity, color.getRed()),
                 intersection.withIntensity(colorIntensity, color.getGreen()),
