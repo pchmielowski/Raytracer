@@ -3,6 +3,7 @@ package net.chmielowski.raytracer;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.awt.*;
+import java.util.*;
 import java.util.function.Function;
 
 
@@ -41,14 +42,22 @@ final class Sphere {
             return Math.max(Math.min((int) (value * sphere.shader.apply(colorIntensity)), 255), 0);
         }
 
-        Color getColor(java.util.List<Light> lights) {
+        Color getColor(Collection<Light> lights, Collection<Sphere> objects) {
             final Vector3D pointOfHit = Main.CAMERA_SOURCE.add(cameraDirection).scalarMultiply(distanceToCamera());
             final Vector3D normalToPointOfHit = getNormal(pointOfHit);
 
             return lights.stream()
+                    .filter(light -> objects.stream()
+                            .noneMatch(object -> isOnAWayToLight(pointOfHit, normalToPointOfHit, light, object)))
                     .map(light -> light.getColor(pointOfHit, normalToPointOfHit, sphere.color, this))
                     .reduce(Intersection::sumColors)
                     .orElse(Color.BLACK);
+        }
+
+        private boolean isOnAWayToLight(Vector3D pointOfHit, Vector3D normalToPointOfHit, Light light, Sphere object) {
+            return object.intersection(
+                    pointOfHit.add(normalToPointOfHit),
+                    light.getDirection(pointOfHit)).intersects;
         }
 
         private Vector3D getNormal(Vector3D pointOfHit) {
@@ -75,9 +84,12 @@ final class Sphere {
     }
 
     Intersection intersection(int x, int y) {
-        final Vector3D fromCamToCenter = center.subtract(Main.CAMERA_SOURCE);
-        final Vector3D cameraDir = Camera.direction(x, y);
-        final double tca = fromCamToCenter.dotProduct(cameraDir);
+        return intersection(Main.CAMERA_SOURCE, Camera.direction(x, y));
+    }
+
+    private Intersection intersection(Vector3D origin, Vector3D direction) {
+        final Vector3D fromCamToCenter = center.subtract(origin);
+        final double tca = fromCamToCenter.dotProduct(direction);
         if (tca < 0) {
             return Intersection.not(this);
         }
@@ -87,7 +99,7 @@ final class Sphere {
         }
         final double thc = Math.sqrt(radius * radius - d2);
         final double distanceToCamera = tca < thc ? tca + thc : tca - thc;
-        return new Intersection(true, this, cameraDir, distanceToCamera);
+        return new Intersection(true, this, direction, distanceToCamera);
     }
 
 }

@@ -12,7 +12,7 @@ final class Light {
         this.center = center;
     }
 
-    private Vector3D getDirection(Vector3D pointOfHit) {
+     Vector3D getDirection(Vector3D pointOfHit) {
         return center.subtract(pointOfHit).normalize();
     }
 

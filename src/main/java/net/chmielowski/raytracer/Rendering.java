@@ -54,7 +54,7 @@ class Rendering {
                 .map(sphere -> sphere.intersection(x, y))
                 .filter(intersection -> intersection.intersects)
                 .reduce(Rendering::chooseClosest)
-                .map(intersection -> intersection.getColor(lights))
+                .map(intersection -> intersection.getColor(lights, objects))
                 .orElse(Color.BLACK);
     }
 }

@@ -4,7 +4,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 
 class Camera {
-    private static final float FIELD_OF_VIEW = 60;
+    private static final float FIELD_OF_VIEW = 30;
 
     static Vector3D direction(int x, int y) {
         final double angle = Math.tan(Math.PI * 0.5 * FIELD_OF_VIEW / 180.);
