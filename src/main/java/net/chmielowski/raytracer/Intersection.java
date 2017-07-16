@@ -4,26 +4,30 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.awt.*;
 import java.util.Collection;
+import java.util.Optional;
 
 
 class Intersection {
     final boolean intersects;
-    final Sphere sphere;
-    final Vector3D cameraDirection;
+    private final Shape shape;
+    private final Vector3D cameraDirection;
     private final double distanceToCamera;
+    private final Vector3D mPointOfHit;
+    Color color = null;
 
-    Intersection(boolean intersects, Sphere sphere, Vector3D cameraDirection, double distanceToCamera) {
+    Intersection(boolean intersects, Shape shape, Vector3D cameraDirection, double distanceToCamera, Vector3D pointOfHit) {
         this.intersects = intersects;
-        this.sphere = sphere;
+        this.shape = shape;
         this.cameraDirection = cameraDirection;
         this.distanceToCamera = distanceToCamera;
+        this.mPointOfHit = pointOfHit;
     }
 
     static Intersection not(Sphere sphere) {
-        return new Intersection(false, sphere, null, 0);
+        return new Intersection(false, sphere, null, 0, null);
     }
 
-    static Color sumColors(final Color first, final Color second) {
+    private static Color sumColors(final Color first, final Color second) {
         return new Color(getMin(first.getRed(), second.getRed()),
                 getMin(first.getGreen(), second.getGreen()),
                 getMin(first.getBlue(), second.getBlue()));
@@ -33,18 +37,14 @@ class Intersection {
         return Math.min(first + second, 255);
     }
 
-    int withIntensity(double colorIntensity, int value) {
-        return Math.max(Math.min((int) (value * sphere.shader.apply(colorIntensity)), 255), 0);
-    }
-
     Color getColor(Collection<Light> lights, Collection<Shape> objects) {
-        final Vector3D pointOfHit = Main.CAMERA_SOURCE.add(cameraDirection).scalarMultiply(distanceToCamera());
-        final Vector3D normalToPointOfHit = getNormal(pointOfHit);
-
+        final Vector3D pointOfHit = Optional.ofNullable(this.mPointOfHit)
+                .orElseGet(() -> Main.CAMERA_SOURCE.add(cameraDirection).scalarMultiply(distanceToCamera()));
+        final Vector3D normalToPointOfHit = shape.getNormal(pointOfHit);
         return lights.stream()
                 .filter(light -> objects.stream()
                         .noneMatch(object -> isOnAWayToLight(pointOfHit, normalToPointOfHit, light, object)))
-                .map(light -> light.getColor(pointOfHit, normalToPointOfHit, sphere.color, this))
+                .map(light -> shape.getColor(pointOfHit, normalToPointOfHit, light))
                 .reduce(Intersection::sumColors)
                 .orElse(Color.BLACK);
     }
@@ -53,13 +53,6 @@ class Intersection {
         return object.intersection(
                 pointOfHit.add(normalToPointOfHit),
                 light.getDirection(pointOfHit)).intersects;
-    }
-
-    private Vector3D getNormal(Vector3D pointOfHit) {
-        // TODO: flip normal if we are inside
-        //            if (direction.dotProduct(normalToPointOfHit) > 0)
-        //                normalToPointOfHit = normalToPointOfHit.negate();
-        return pointOfHit.subtract(sphere.center).normalize();
     }
 
     double distanceToCamera() {

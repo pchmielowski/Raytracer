@@ -20,10 +20,6 @@ final class Sphere implements Shape {
         this.shader = shader;
     }
 
-    @Override
-    public Intersection intersection(int x, int y) {
-        return intersection(Main.CAMERA_SOURCE, Camera.direction(x, y));
-    }
 
     @Override
     public Intersection intersection(Vector3D origin, Vector3D direction) {
@@ -38,7 +34,29 @@ final class Sphere implements Shape {
         }
         final double thc = Math.sqrt(radius * radius - d2);
         final double distanceToCamera = tca < thc ? tca + thc : tca - thc;
-        return new Intersection(true, this, direction, distanceToCamera);
+        return new Intersection(true, this, direction, distanceToCamera, /*pointOfHit*/ null);
     }
 
+    @Override
+    public Function<Double, Double> getShader() {
+        return shader;
+    }
+
+    @Override
+    public Color getColor() {
+        return color;
+    }
+
+    @Override
+    public Vector3D getCenter() {
+        return center;
+    }
+
+    @Override
+    public Vector3D getNormal(Vector3D pointOfHit) {
+        // TODO: flip normal if we are inside
+        //            if (direction.dotProduct(normalToPointOfHit) > 0)
+        //                normalToPointOfHit = normalToPointOfHit.negate();
+        return pointOfHit.subtract(getCenter()).normalize();
+    }
 }

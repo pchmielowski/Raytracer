@@ -25,12 +25,12 @@ public class Main {
                         new Sphere(new Vector3D(0., 0, -20), 1, Color.BLUE, BASIC),
                         new Sphere(new Vector3D(-2., 0, -25), 1, Color.CYAN, BASIC),
                         new Sphere(new Vector3D(-4., 0, -30), 1, Color.MAGENTA, BASIC),
-                        new Sphere(new Vector3D(0., -10., -20), 9, Color.YELLOW, BASIC)
+                        new Disc(new Vector3D(0., -6., -60), 30, new Vector3D(0., 1, 0), new Color(0xCCCCCC), BASIC)
                 ),
                 Arrays.asList(
                         new Light(new Vector3D(15., 1., 10.)),
                         new Light(new Vector3D(-15., -5., 10.)),
-                        new Light(new Vector3D(-2., 10, -30))
+                        new Light(new Vector3D(-2., 10, -10))
                 ))
                 .create();
     }
