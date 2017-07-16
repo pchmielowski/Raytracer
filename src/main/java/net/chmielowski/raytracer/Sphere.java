@@ -2,22 +2,15 @@ package net.chmielowski.raytracer;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
-import java.awt.*;
-import java.util.function.Function;
+final class Sphere extends Shape {
 
-final class Sphere implements Shape {
-
-    Function<Double, Double> shader;
-
-    final Vector3D center;
+    private final Vector3D center;
     private final double radius;
-    final Color color;
 
-    Sphere(Vector3D center, double radius, Color color, Function<Double, Double> shader) {
+    Sphere(Vector3D center, double radius, Material material) {
+        super(material);
         this.center = center;
         this.radius = radius;
-        this.color = color;
-        this.shader = shader;
     }
 
 
@@ -35,16 +28,6 @@ final class Sphere implements Shape {
         final double thc = Math.sqrt(radius * radius - d2);
         final double distanceToCamera = tca < thc ? tca + thc : tca - thc;
         return new Intersection(true, this, direction, distanceToCamera, /*pointOfHit*/ null);
-    }
-
-    @Override
-    public Function<Double, Double> getShader() {
-        return shader;
-    }
-
-    @Override
-    public Color getColor() {
-        return color;
     }
 
     @Override

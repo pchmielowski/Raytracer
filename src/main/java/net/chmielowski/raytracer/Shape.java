@@ -6,31 +6,47 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.awt.*;
 import java.util.function.Function;
 
-interface Shape {
+abstract class Shape {
 
-    static int withIntensity(double colorIntensity, int value, Function<Double, Double> shader) {
-        return Math.max(Math.min((int) (value * shader.apply(colorIntensity)), 255), 0);
+    private final Material material;
+
+    Shape(Material material) {
+        this.material = material;
     }
 
-    default Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Light light) {
-        double colorIntensity = light.getIntensity(pointOfHit, normalToPointOfHit);
-        return new Color(withIntensity(colorIntensity, getColor().getRed(), getShader()),
-                withIntensity(colorIntensity, getColor().getGreen(), getShader()),
-                withIntensity(colorIntensity, getColor().getBlue(), getShader()));
+    Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Light light) {
+        return material.getColor(pointOfHit, normalToPointOfHit, light);
     }
 
-    default Intersection intersection(int x, int y) {
+    Intersection intersection(int x, int y) {
         return intersection(Main.CAMERA_SOURCE, Camera.direction(x, y));
     }
 
 
-    Intersection intersection(Vector3D origin, Vector3D direction);
+    public abstract Intersection intersection(Vector3D origin, Vector3D direction);
 
-    Function<Double, Double> getShader();
+    public abstract Vector3D getCenter();
 
-    Color getColor();
+    public abstract Vector3D getNormal(Vector3D pointOfHit);
 
-    Vector3D getCenter();
+    public static class Material {
+        private final Color color;
+        private final Function<Double, Double> shader;
 
-    Vector3D getNormal(Vector3D pointOfHit);
+        Material(Color color, Function<Double, Double> shader) {
+            this.color = color;
+            this.shader = shader;
+        }
+
+        static int withIntensity(double colorIntensity, int value, Function<Double, Double> shader) {
+            return Math.max(Math.min((int) (value * shader.apply(colorIntensity)), 255), 0);
+        }
+
+        Color getColor(Vector3D pointOfHit, Vector3D normalToPointOfHit, Light light) {
+            double colorIntensity = light.getIntensity(pointOfHit, normalToPointOfHit);
+            return new Color(withIntensity(colorIntensity, color.getRed(), shader),
+                    withIntensity(colorIntensity, color.getGreen(), shader),
+                    withIntensity(colorIntensity, color.getBlue(), shader));
+        }
+    }
 }
