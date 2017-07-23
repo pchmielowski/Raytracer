@@ -7,7 +7,7 @@ import java.util.Collection;
 
 
 class Intersection {
-    final boolean intersects;
+    private final boolean intersects;
     private final Shape shape;
     private final double distanceToCamera;
     private final Vector3D pointOfHit;
@@ -45,16 +45,14 @@ class Intersection {
         final Vector3D normalToPointOfHit = shape.getNormal(pointOfHit);
         return lights.stream()
                 .filter(light -> objects.stream()
-                        .noneMatch(object -> isOnAWayToLight(pointOfHit, normalToPointOfHit, light, object)))
+                        .noneMatch(object -> isOnAWayToLight(pointOfHit, light, object)))
                 .map(light -> shape.getColor(pointOfHit, normalToPointOfHit, light))
                 .reduce(Intersection::sumColors)
                 .orElse(Color.BLACK);
     }
 
-    private boolean isOnAWayToLight(Vector3D pointOfHit, Vector3D normalToPointOfHit, Light light, Shape object) {
-        return object.intersection(
-                pointOfHit.add(normalToPointOfHit),
-                light.getDirection(pointOfHit)).intersects;
+    private boolean isOnAWayToLight(Vector3D pointOfHit, Light light, Shape object) {
+        return object.intersection(pointOfHit, light.getDirection(pointOfHit)).intersects;
     }
 
 }
