@@ -5,9 +5,11 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 final class Light {
     private final Vector3D center;
+    private final double intensity;
 
-    Light(Vector3D center) {
+    Light(Vector3D center, double intensity) {
         this.center = center;
+        this.intensity = intensity;
     }
 
     Vector3D getDirection(Vector3D pointOfHit) {
@@ -15,7 +17,7 @@ final class Light {
     }
 
     double getIntensity(Vector3D pointOfHit, Vector3D normalToPointOfHit) {
-        return Math.max(0., normalToPointOfHit.dotProduct(getDirection(pointOfHit)));
+        return intensity * Math.max(0., normalToPointOfHit.dotProduct(getDirection(pointOfHit)));
     }
 
 }

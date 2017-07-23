@@ -27,9 +27,8 @@ public class Main {
                         new Disc(new Vector3D(0., -6., -60), 30, new Vector3D(0., 1, 0), new Shape.Material(color, BASIC))
                 ),
                 Arrays.asList(
-                        new Light(new Vector3D(15., 1., 10.)),
-                        new Light(new Vector3D(-15., -5., 10.)),
-                        new Light(new Vector3D(-2., 10, -10))
+                        new Light(new Vector3D(15., 1., 10.), .5),
+                        new Light(new Vector3D(-2., 10, -10), .2)
                 ))
                 .create();
     }
