@@ -21,7 +21,7 @@ class Disc extends Shape {
         double d = center.subtract(origin).dotProduct(normal) / direction.dotProduct(normal);
         final Vector3D pointOfHit = origin.add(direction).scalarMultiply(d);
         return new Intersection(pointOfHit.subtract(center).getNorm() <= radius, this,/*camera direction*//*distance to camera*/0,
-                pointOfHit);
+                pointOfHit, direction);
 
     }
 

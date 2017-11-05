@@ -1,5 +1,7 @@
 package net.chmielowski.raytracer;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -10,13 +12,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 class Rendering {
-
+    static Rendering INSTANCE;
     private final List<Light> lights;
     private final List<Shape> objects;
 
     Rendering(List<Shape> objects, List<Light> lights) {
         this.objects = objects;
         this.lights = lights;
+        INSTANCE = this;
     }
 
     private static String colorAsString(Color color) {
@@ -36,7 +39,7 @@ class Rendering {
                 .map(y -> IntStream
                         .range(0, Main.WIDTH)
                         .boxed()
-                        .map(x -> colorAt(x, y))
+                        .map(x -> colorAt(Camera.SOURCE, Camera.direction(x, y)))
                         .map(Rendering::colorAsString)
                         .collect(Collectors.joining(" ")))
                 .collect(Collectors.joining("\n", "", "\n"));
@@ -45,9 +48,9 @@ class Rendering {
         writer.close();
     }
 
-    private Color colorAt(int x, int y) {
+    Color colorAt(Vector3D rayOrigin, Vector3D rayDirection) {
         return objects.stream()
-                .map(shape -> shape.intersection(Camera.SOURCE, Camera.direction(x, y)))
+                .map(shape -> shape.intersection(rayOrigin, rayDirection))
                 .filter(Intersection::intersects)
                 .reduce(Intersection::isCloser)
                 .map(intersection -> intersection.getColor(lights, objects))

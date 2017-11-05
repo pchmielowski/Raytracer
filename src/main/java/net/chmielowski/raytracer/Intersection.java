@@ -11,16 +11,18 @@ class Intersection {
     private final Shape shape;
     private final double distanceToCamera;
     private final Vector3D pointOfHit;
+    private final Vector3D rayDirection;
 
-    Intersection(boolean intersects, Shape shape, double distanceToCamera, Vector3D pointOfHit) {
+    Intersection(boolean intersects, Shape shape, double distanceToCamera, Vector3D pointOfHit, Vector3D rayDirection) {
         this.intersects = intersects;
         this.shape = shape;
         this.distanceToCamera = distanceToCamera;
         this.pointOfHit = pointOfHit;
+        this.rayDirection = rayDirection;
     }
 
     static Intersection not(Sphere sphere) {
-        return new Intersection(false, sphere, 0, null);
+        return new Intersection(false, sphere, 0, null, null);
     }
 
     private static Color sumColors(final Color first, final Color second) {
@@ -48,7 +50,12 @@ class Intersection {
                         .noneMatch(object -> isOnAWayToLight(pointOfHit, light, object)))
                 .map(light -> shape.getColor(pointOfHit, normalToPointOfHit, light))
                 .reduce(Intersection::sumColors)
+                .map(color -> sumColors(color, reflected(normalToPointOfHit)))
                 .orElse(Color.BLACK);
+    }
+
+    private Color reflected(Vector3D normal) {
+        return Rendering.INSTANCE.colorAt(pointOfHit, rayDirection.normalize().subtract(normal).scalarMultiply(2).scalarMultiply(rayDirection.dotProduct(normal)));
     }
 
     private boolean isOnAWayToLight(Vector3D pointOfHit, Light light, Shape object) {

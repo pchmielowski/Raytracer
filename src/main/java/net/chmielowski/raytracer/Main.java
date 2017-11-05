@@ -24,7 +24,10 @@ public class Main {
                         new Sphere(new Vector3D(0., 0, -20), 1, new Shape.Material(Color.BLUE, BASIC)),
                         new Sphere(new Vector3D(-2., 0, -25), 1, new Shape.Material(Color.CYAN, BASIC)),
                         new Sphere(new Vector3D(-4., 0, -30), 1, new Shape.Material(Color.MAGENTA, BASIC)),
-                        new Disc(new Vector3D(0., -6., -60), 30, new Vector3D(0., 1, 0), new Shape.Material(color, BASIC))
+                        new Sphere(new Vector3D(2., -3, -15), 1, new Shape.Material(Color.RED, BASIC)),
+                        new Sphere(new Vector3D(0., -3, -20), 1, new Shape.Material(Color.BLUE, BASIC)),
+                        new Sphere(new Vector3D(-2., -3, -25), 1, new Shape.Material(Color.CYAN, BASIC)),
+                        new Sphere(new Vector3D(-4., -3 - 30), 1, new Shape.Material(Color.MAGENTA, BASIC))
                 ),
                 Arrays.asList(
                         new Light(new Vector3D(15., 1., 10.), .5),
